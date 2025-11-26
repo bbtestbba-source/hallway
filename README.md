@@ -8,3 +8,10 @@ No build step is required—open `index.html` directly in a modern desktop brows
 ## Usage
 1. Load the page and click **Start simulation**.
 2. Use the sliders to tune speed, gravity, and bounce. Negative vertical speed tosses the ball upward on start; positive gravity pulls it back down.
+
+## Testing
+Run a quick syntax check to ensure the JavaScript file parses cleanly:
+
+```
+node --check src/main.js
+```
