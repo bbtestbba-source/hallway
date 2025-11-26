@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bouncing Ball Box</title>
+    <title>Hallway Bouncing Ball</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -17,7 +17,7 @@
         margin: 0;
         min-height: 100vh;
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-        background: radial-gradient(circle, #0f172a 0%, #0b1021 60%, #06070c 100%);
+        background: radial-gradient(circle at 30% 20%, #0f172a, #06070c 55%, #03050a 100%);
         color: #e5e7eb;
         display: grid;
         place-items: center;
@@ -28,9 +28,9 @@
         width: min(1200px, 95vw);
         height: min(720px, 70vh);
         border-radius: 1rem;
-        background: linear-gradient(135deg, #0c101f, #06070c);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 18px 80px rgba(0, 0, 0, 0.6);
+        background: linear-gradient(135deg, rgba(22, 29, 55, 0.6), rgba(9, 12, 24, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 18px 80px rgba(0, 0, 0, 0.65);
         position: relative;
         overflow: hidden;
       }
@@ -58,14 +58,30 @@
         height: 100%;
         display: block;
       }
+
+      .hint {
+        position: absolute;
+        bottom: 0.75rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.85);
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+        backdrop-filter: blur(8px);
+      }
     </style>
   </head>
   <body>
     <div class="frame">
       <header>
-        <h1>Bouncing Ball Play Area</h1>
+        <h1>Hallway Bouncing Ball</h1>
       </header>
-      <canvas id="playArea" aria-label="Boxed bouncing ball"></canvas>
+      <canvas id="playArea" aria-label="Bouncing ball down a hallway"></canvas>
+      <div class="hint">Double-click to toggle pause</div>
     </div>
 
     <script>
@@ -75,15 +91,30 @@
       let width = 0;
       let height = 0;
       let lastTime = performance.now();
+      let paused = false;
+
+      const camera = {
+        z: -14,
+        focal: 320,
+        horizon: 0.58,
+      };
+
+      const corridor = {
+        halfWidth: 6,
+        height: 6,
+        length: 80,
+      };
 
       const ball = {
-        x: 160,
-        y: 160,
-        radius: 16,
-        vx: 180,
-        vy: -160,
-        gravity: 480,
-        bounce: 0.86,
+        x: 0,
+        y: 1,
+        z: 6,
+        radius: 0.35,
+        vx: 2.4,
+        vy: 3.8,
+        vz: 12,
+        gravity: 14,
+        bounce: 0.82,
       };
 
       function resizeCanvas() {
@@ -98,72 +129,161 @@
         height = nextHeight;
         canvas.width = width;
         canvas.height = height;
-
-        // Keep the ball inside the new bounds.
-        ball.x = Math.min(Math.max(ball.radius, ball.x), width - ball.radius);
-        ball.y = Math.min(Math.max(ball.radius, ball.y), height - ball.radius);
       }
 
-      function drawBackground() {
-        const bg = ctx.createLinearGradient(0, 0, width, height);
-        bg.addColorStop(0, '#0f172a');
-        bg.addColorStop(1, '#0b1021');
-        ctx.fillStyle = bg;
-        ctx.fillRect(0, 0, width, height);
+      function project(x, y, z) {
+        const zDist = Math.max(0.5, z - camera.z);
+        const scale = camera.focal / zDist;
+        const cx = width / 2;
+        const horizonY = height * camera.horizon;
+        return {
+          x: cx + x * scale,
+          y: horizonY - y * scale,
+          scale,
+        };
+      }
 
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(8, 8, width - 16, height - 16);
+      function drawCorridor() {
+        const nearZ = 0.1;
+        const farZ = corridor.length;
+        const floorY = 0;
+        const ceilingY = corridor.height;
+
+        const nearLeftFloor = project(-corridor.halfWidth, floorY, nearZ);
+        const nearRightFloor = project(corridor.halfWidth, floorY, nearZ);
+        const farLeftFloor = project(-corridor.halfWidth, floorY, farZ);
+        const farRightFloor = project(corridor.halfWidth, floorY, farZ);
+
+        const nearLeftCeil = project(-corridor.halfWidth, ceilingY, nearZ);
+        const nearRightCeil = project(corridor.halfWidth, ceilingY, nearZ);
+        const farLeftCeil = project(-corridor.halfWidth, ceilingY, farZ);
+        const farRightCeil = project(corridor.halfWidth, ceilingY, farZ);
+
+        // Floor gradient
+        const floorGrad = ctx.createLinearGradient(0, nearLeftFloor.y, 0, farLeftFloor.y);
+        floorGrad.addColorStop(0, 'rgba(34, 197, 235, 0.14)');
+        floorGrad.addColorStop(1, 'rgba(15, 23, 42, 0.8)');
+        ctx.fillStyle = floorGrad;
+        ctx.beginPath();
+        ctx.moveTo(nearLeftFloor.x, nearLeftFloor.y);
+        ctx.lineTo(nearRightFloor.x, nearRightFloor.y);
+        ctx.lineTo(farRightFloor.x, farRightFloor.y);
+        ctx.lineTo(farLeftFloor.x, farLeftFloor.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Ceiling
+        const ceilGrad = ctx.createLinearGradient(0, nearLeftCeil.y, 0, farLeftCeil.y);
+        ceilGrad.addColorStop(0, 'rgba(56, 189, 248, 0.08)');
+        ceilGrad.addColorStop(1, 'rgba(67, 56, 202, 0.08)');
+        ctx.fillStyle = ceilGrad;
+        ctx.beginPath();
+        ctx.moveTo(nearLeftCeil.x, nearLeftCeil.y);
+        ctx.lineTo(nearRightCeil.x, nearRightCeil.y);
+        ctx.lineTo(farRightCeil.x, farRightCeil.y);
+        ctx.lineTo(farLeftCeil.x, farLeftCeil.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Walls
+        const wallGradLeft = ctx.createLinearGradient(nearLeftFloor.x, nearLeftFloor.y, farLeftCeil.x, farLeftCeil.y);
+        wallGradLeft.addColorStop(0, 'rgba(14, 165, 233, 0.3)');
+        wallGradLeft.addColorStop(1, 'rgba(15, 23, 42, 0.55)');
+        ctx.fillStyle = wallGradLeft;
+        ctx.beginPath();
+        ctx.moveTo(nearLeftFloor.x, nearLeftFloor.y);
+        ctx.lineTo(farLeftFloor.x, farLeftFloor.y);
+        ctx.lineTo(farLeftCeil.x, farLeftCeil.y);
+        ctx.lineTo(nearLeftCeil.x, nearLeftCeil.y);
+        ctx.closePath();
+        ctx.fill();
+
+        const wallGradRight = ctx.createLinearGradient(nearRightFloor.x, nearRightFloor.y, farRightCeil.x, farRightCeil.y);
+        wallGradRight.addColorStop(0, 'rgba(56, 189, 248, 0.28)');
+        wallGradRight.addColorStop(1, 'rgba(67, 56, 202, 0.55)');
+        ctx.fillStyle = wallGradRight;
+        ctx.beginPath();
+        ctx.moveTo(nearRightFloor.x, nearRightFloor.y);
+        ctx.lineTo(farRightFloor.x, farRightFloor.y);
+        ctx.lineTo(farRightCeil.x, farRightCeil.y);
+        ctx.lineTo(nearRightCeil.x, nearRightCeil.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // Edge lines
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(nearLeftFloor.x, nearLeftFloor.y);
+        ctx.lineTo(farLeftFloor.x, farLeftFloor.y);
+        ctx.lineTo(farLeftCeil.x, farLeftCeil.y);
+        ctx.lineTo(nearLeftCeil.x, nearLeftCeil.y);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(nearRightFloor.x, nearRightFloor.y);
+        ctx.lineTo(farRightFloor.x, farRightFloor.y);
+        ctx.lineTo(farRightCeil.x, farRightCeil.y);
+        ctx.lineTo(nearRightCeil.x, nearRightCeil.y);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(nearLeftFloor.x, nearLeftFloor.y);
+        ctx.lineTo(nearRightFloor.x, nearRightFloor.y);
+        ctx.moveTo(nearLeftCeil.x, nearLeftCeil.y);
+        ctx.lineTo(nearRightCeil.x, nearRightCeil.y);
+        ctx.moveTo(farLeftFloor.x, farLeftFloor.y);
+        ctx.lineTo(farRightFloor.x, farRightFloor.y);
+        ctx.moveTo(farLeftCeil.x, farLeftCeil.y);
+        ctx.lineTo(farRightCeil.x, farRightCeil.y);
+        ctx.stroke();
+
+        // Light streaks along the hallway
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        for (let i = 4; i < corridor.length; i += 8) {
+          const a = project(-corridor.halfWidth, floorY, i);
+          const b = project(corridor.halfWidth, floorY, i);
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.stroke();
+        }
       }
 
       function drawBall() {
-        const glow = ctx.createRadialGradient(
-          ball.x,
-          ball.y,
-          ball.radius * 0.2,
-          ball.x,
-          ball.y,
-          ball.radius * 1.6,
-        );
+        const p = project(ball.x, ball.y + ball.radius, ball.z);
+        const r = ball.radius * p.scale * 60;
+        const glow = ctx.createRadialGradient(p.x, p.y, r * 0.2, p.x, p.y, r * 1.6);
         glow.addColorStop(0, 'rgba(110, 231, 255, 0.95)');
         glow.addColorStop(1, 'rgba(79, 70, 229, 0)');
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius * 1.6, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, r * 1.6, 0, Math.PI * 2);
         ctx.fill();
 
-        const fill = ctx.createRadialGradient(
-          ball.x - ball.radius * 0.4,
-          ball.y - ball.radius * 0.35,
-          4,
-          ball.x,
-          ball.y,
-          ball.radius,
-        );
+        const fill = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.45, r * 0.15, p.x, p.y, r);
         fill.addColorStop(0, '#e7ff6b');
         fill.addColorStop(1, '#7f9728');
         ctx.fillStyle = fill;
         ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      function step(timestamp) {
-        const delta = Math.min(0.05, (timestamp - lastTime) / 1000);
-        lastTime = timestamp;
-
-        resizeCanvas();
-        drawBackground();
-
-        // Physics.
-        ball.vy += ball.gravity * delta;
+      function updatePhysics(delta) {
+        ball.vy -= ball.gravity * delta;
         ball.x += ball.vx * delta;
         ball.y += ball.vy * delta;
+        ball.z += ball.vz * delta;
 
-        const left = ball.radius;
-        const right = width - ball.radius;
-        const top = ball.radius;
-        const bottom = height - ball.radius;
+        // Collisions with walls
+        const left = -corridor.halfWidth + ball.radius;
+        const right = corridor.halfWidth - ball.radius;
+        const floor = ball.radius;
+        const ceiling = corridor.height - ball.radius;
 
         if (ball.x < left) {
           ball.x = left;
@@ -173,12 +293,38 @@
           ball.vx = -Math.abs(ball.vx) * ball.bounce;
         }
 
-        if (ball.y < top) {
-          ball.y = top;
+        if (ball.y < floor) {
+          ball.y = floor;
           ball.vy = Math.abs(ball.vy) * ball.bounce;
-        } else if (ball.y > bottom) {
-          ball.y = bottom;
+        } else if (ball.y > ceiling) {
+          ball.y = ceiling;
           ball.vy = -Math.abs(ball.vy) * ball.bounce;
+        }
+
+        // Loop hallway
+        if (ball.z > corridor.length) {
+          ball.z -= corridor.length;
+        }
+      }
+
+      function drawBackground() {
+        const bg = ctx.createLinearGradient(0, 0, width, height);
+        bg.addColorStop(0, '#0b1221');
+        bg.addColorStop(1, '#050811');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      function step(timestamp) {
+        const delta = Math.min(0.05, (timestamp - lastTime) / 1000);
+        lastTime = timestamp;
+
+        resizeCanvas();
+        drawBackground();
+        drawCorridor();
+
+        if (!paused) {
+          updatePhysics(delta);
         }
 
         drawBall();
@@ -189,6 +335,9 @@
         resizeCanvas();
         lastTime = performance.now();
         window.addEventListener('resize', resizeCanvas);
+        canvas.addEventListener('dblclick', () => {
+          paused = !paused;
+        });
         requestAnimationFrame(step);
       }
 

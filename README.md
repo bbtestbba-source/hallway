@@ -1,27 +1,21 @@
-# hallway project
+# Hallway Bouncing Ball
 
-A single-file HTML canvas demo that keeps a glowing ball bouncing inside a 2D box.
+A single-file HTML that draws a glowing ball racing down a stylized hallway on a 2D canvas. Open the file directly or serve it—no external assets or builds required.
 
-## Why a server was recommended before
-Modern browsers often block module imports, fetches, or font/image loads when an HTML file is opened with a `file://` URL because those operations look like cross-origin requests. That’s why the earlier version asked you to run a tiny static server—it avoided those local-file security restrictions by serving everything from `http://localhost`. The downside was extra steps to start the server.
+## How to run
 
-## What changed
-The demo is now contained entirely in `index.html` with inline JavaScript and CSS. There are no module imports, no external assets, and no build tools. This removes the `file://` restrictions that were preventing the animation from starting when you double-clicked the file.
+1. Locate `index.html` in this folder.
+2. Either double-click it (opens via `file://`) **or** start a tiny local server and browse to it:
+   ```sh
+   python -m http.server 8000
+   # then visit http://localhost:8000
+   ```
+3. Watch the ball bounce its way down the corridor. Double-click the canvas to pause/resume.
 
-## Run locally (no server required)
-1. Download or clone this folder so `index.html` sits by itself.
-2. Double-click `index.html` (or right-click → *Open With* → your browser) in Chrome, Edge, Firefox, or Safari.
-3. You should immediately see the framed play area with a glowing ball bouncing around. If you still get a blank page, try another browser profile or disable extensions that may block canvas rendering.
+The page bundles all logic inline, so it works without a network connection. Using a local server is optional; it simply mimics typical hosting if you prefer.
 
-## Alternative: tiny local server (optional)
-If you prefer or if your environment has strict file restrictions, you can still serve the file:
-1. Open a terminal in this folder (`cd hallway`).
-2. Run `python -m http.server 8000` (Python 3) or `npx serve` if you have Node installed.
-3. Visit `http://localhost:8000` in your browser. The experience is identical—you don’t lose anything by opening it directly from the file system.
+## How it works
 
-## Usage
-1. Load the page.
-2. Watch the ball bounce inside the framed play area.
-
-## Testing
-No automated tests are required for this single-file demo. You can manually open `index.html` to verify it renders and animates.
+- A 2D canvas renders a perspective hallway and a glowing ball projected with a simple focal-length transform.
+- Physics apply gravity, wall bounces, and a forward push along the hallway; reaching the end wraps the ball back to the start for continuous motion.
+- Resize events keep the scene full-bleed inside the framed container.
