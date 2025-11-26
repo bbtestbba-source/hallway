@@ -79,15 +79,56 @@
         display: grid;
         place-items: center;
         padding: 1.5rem;
-        background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.8));
+        background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.85));
         color: #f5f7fb;
         text-align: center;
         font-weight: 600;
         letter-spacing: 0.01em;
         line-height: 1.6;
+        transition: opacity 180ms ease;
       }
 
       .status-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .status-card {
+        background: rgba(0, 0, 0, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem 1.25rem;
+        max-width: 460px;
+        box-shadow: 0 12px 50px rgba(0, 0, 0, 0.55);
+      }
+
+      .status-card p {
+        margin-top: 0;
+        margin-bottom: 0.9rem;
+      }
+
+      .status-button {
+        background: linear-gradient(90deg, #6ee7ff, #4f46e5);
+        border: none;
+        border-radius: 999px;
+        color: #0a0c12;
+        font-weight: 700;
+        padding: 0.7rem 1.5rem;
+        cursor: pointer;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+        transition: transform 120ms ease, box-shadow 120ms ease, opacity 160ms ease;
+      }
+
+      .status-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 48px rgba(0, 0, 0, 0.5);
+      }
+
+      .status-button:active {
+        transform: translateY(0);
+      }
+
+      .status-button.hidden {
         display: none;
       }
 
@@ -130,8 +171,11 @@
       </section>
       <section class="canvas-wrapper">
         <canvas id="sceneCanvas"></canvas>
-        <div id="statusOverlay" class="status-overlay hidden">
-          <p id="statusText"></p>
+        <div id="statusOverlay" class="status-overlay">
+          <div class="status-card">
+            <p id="statusText">Preparing hallway scene...</p>
+            <button id="startButton" class="status-button" type="button">Start simulation</button>
+          </div>
         </div>
       </section>
     </main>

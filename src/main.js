@@ -1,9 +1,11 @@
 const canvas = document.getElementById('sceneCanvas');
 const statusOverlay = document.getElementById('statusOverlay');
 const statusText = document.getElementById('statusText');
+const startButton = document.getElementById('startButton');
 
 if (!window.THREE) {
   statusText.textContent = 'Three.js failed to load. Please check your connection and reload the page.';
+  startButton?.classList.add('hidden');
   statusOverlay.classList.remove('hidden');
 } else {
   try {
@@ -68,6 +70,8 @@ if (!window.THREE) {
     const speedInput = document.getElementById('speed');
     const bounceInput = document.getElementById('bounce');
 
+    let started = false;
+
     function resizeRenderer() {
       const nextWidth = canvas.clientWidth || canvas.parentElement?.clientWidth || window.innerWidth;
       const nextHeight = canvas.clientHeight || canvas.parentElement?.clientHeight || window.innerHeight * 0.7;
@@ -126,15 +130,31 @@ if (!window.THREE) {
       });
     }
 
+    function startSimulation() {
+      if (started) return;
+      started = true;
+      statusOverlay.classList.add('hidden');
+      resetBall();
+      clock.start();
+      animate();
+    }
+
+    statusText.textContent =
+      'Click Start to launch the hallway bounce. If you see a blank canvas, your browser may be blocking WebGL or local file access—serving with "python -m http.server 8000" often fixes it.';
+    startButton?.classList.remove('hidden');
+    startButton?.addEventListener('click', startSimulation);
+
     initializeUI();
-    resetBall();
-    animate();
+
+    // Auto-start after a short delay in case the user expects instant playback.
+    setTimeout(startSimulation, 400);
 
     window.addEventListener('resize', resizeRenderer);
   } catch (error) {
     console.error('Failed to start the scene:', error);
     statusText.textContent =
       'The hallway scene could not start. If you opened this file directly, try running it from a local server instead (for example, "python -m http.server 8000").';
+    startButton?.classList.add('hidden');
     statusOverlay.classList.remove('hidden');
   }
 }
