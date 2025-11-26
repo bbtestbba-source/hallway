@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hallway Bounce</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: radial-gradient(circle, #1b1f3b 0%, #0f1118 60%, #0a0c12 100%);
+        color: #f5f7fb;
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      header {
+        padding: 1.5rem;
+        text-align: center;
+        letter-spacing: 0.04em;
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 1rem;
+        padding: 0 1.5rem 1.5rem;
+        align-items: start;
+      }
+
+      @media (max-width: 960px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1rem;
+        padding: 1rem 1.25rem;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      }
+
+      .panel h2 {
+        margin-top: 0;
+        font-size: 1.2rem;
+      }
+
+      .controls label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .controls input[type="range"] {
+        width: 100%;
+      }
+
+      .canvas-wrapper {
+        width: 100%;
+        height: 70vh;
+        min-height: 420px;
+        border-radius: 1rem;
+        overflow: hidden;
+        position: relative;
+        background: #06070d;
+        box-shadow: 0 16px 60px rgba(0, 0, 0, 0.6);
+      }
+
+      #sceneCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .hint {
+        color: rgba(245, 247, 251, 0.75);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Bouncing Ball Down the Hallway</h1>
+      <p>Adjust the gravity, speed, and bounce factor to see the effect in real-time.</p>
+    </header>
+    <main>
+      <section class="panel">
+        <h2>Controls</h2>
+        <div class="controls">
+          <label>
+            Gravity
+            <input id="gravity" type="range" min="-25" max="-1" step="0.5" value="-9.8" />
+          </label>
+          <label>
+            Forward Speed
+            <input id="speed" type="range" min="2" max="30" step="0.5" value="12" />
+          </label>
+          <label>
+            Bounce Factor
+            <input id="bounce" type="range" min="0.2" max="0.95" step="0.01" value="0.78" />
+          </label>
+        </div>
+        <p class="hint">Tip: crank up the forward speed to send the ball flying down the corridor.</p>
+      </section>
+      <section class="canvas-wrapper">
+        <canvas id="sceneCanvas"></canvas>
+      </section>
+    </main>
+
+    <script type="module" src="src/main.js"></script>
+  </body>
+</html>
