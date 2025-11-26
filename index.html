@@ -3,201 +3,70 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>2D Bouncing Ball</title>
+    <title>Bouncing Ball Box</title>
     <style>
       :root {
         color-scheme: light dark;
       }
 
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
-        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-        background: radial-gradient(circle, #121424 0%, #0a0c14 60%, #06070c 100%);
-        color: #f5f7fb;
         min-height: 100vh;
-        display: grid;
-        grid-template-rows: auto 1fr;
-      }
-
-      header {
-        padding: 1.5rem;
-        text-align: center;
-        letter-spacing: 0.04em;
-      }
-
-      main {
-        display: grid;
-        grid-template-columns: 320px 1fr;
-        gap: 1rem;
-        padding: 0 1.5rem 1.5rem;
-        align-items: start;
-      }
-
-      @media (max-width: 960px) {
-        main {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .panel {
-        background: rgba(255, 255, 255, 0.06);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 1rem;
-        padding: 1rem 1.25rem;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-      }
-
-      .panel h2 {
-        margin-top: 0;
-        font-size: 1.2rem;
-      }
-
-      .controls label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-      }
-
-      .controls input[type="range"] {
-        width: 100%;
-      }
-
-      .controls .value {
-        display: inline-block;
-        min-width: 2.5ch;
-        text-align: right;
-        color: rgba(245, 247, 251, 0.8);
-        font-variant-numeric: tabular-nums;
-        margin-left: 0.25rem;
-      }
-
-      .canvas-wrapper {
-        width: 100%;
-        height: 70vh;
-        min-height: 420px;
-        border-radius: 1rem;
-        overflow: hidden;
-        position: relative;
-        background: linear-gradient(135deg, #0c101f, #0c0d13 60%, #06070c 100%);
-        box-shadow: 0 16px 60px rgba(0, 0, 0, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-      }
-
-      .status-overlay {
-        position: absolute;
-        inset: 0;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: radial-gradient(circle, #0f172a 0%, #0b1021 60%, #06070c 100%);
+        color: #e5e7eb;
         display: grid;
         place-items: center;
         padding: 1.5rem;
-        background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.85));
-        color: #f5f7fb;
-        text-align: center;
-        font-weight: 600;
-        letter-spacing: 0.01em;
-        line-height: 1.6;
-        transition: opacity 180ms ease;
       }
 
-      .status-overlay.hidden {
-        opacity: 0;
+      .frame {
+        width: min(1200px, 95vw);
+        height: min(720px, 70vh);
+        border-radius: 1rem;
+        background: linear-gradient(135deg, #0c101f, #06070c);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 18px 80px rgba(0, 0, 0, 0.6);
+        position: relative;
+        overflow: hidden;
+      }
+
+      header {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 1rem 1.25rem;
         pointer-events: none;
       }
 
-      .status-card {
-        background: rgba(0, 0, 0, 0.45);
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        border-radius: 0.75rem;
-        padding: 1rem 1.25rem 1.25rem;
-        max-width: 460px;
-        box-shadow: 0 12px 50px rgba(0, 0, 0, 0.55);
+      h1 {
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.85);
       }
 
-      .status-card p {
-        margin-top: 0;
-        margin-bottom: 0.9rem;
-      }
-
-      .status-button {
-        background: linear-gradient(90deg, #6ee7ff, #4f46e5);
-        border: none;
-        border-radius: 999px;
-        color: #0a0c12;
-        font-weight: 700;
-        padding: 0.7rem 1.5rem;
-        cursor: pointer;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-        transition: transform 120ms ease, box-shadow 120ms ease, opacity 160ms ease;
-      }
-
-      .status-button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 14px 48px rgba(0, 0, 0, 0.5);
-      }
-
-      .status-button:active {
-        transform: translateY(0);
-      }
-
-      .status-button.hidden {
-        display: none;
-      }
-
-      #sceneCanvas {
+      canvas {
         width: 100%;
         height: 100%;
         display: block;
       }
-
-      .hint {
-        color: rgba(245, 247, 251, 0.75);
-        font-size: 0.95rem;
-        line-height: 1.5;
-      }
     </style>
   </head>
   <body>
-    <header>
-      <h1>2D Bouncing Ball</h1>
-      <p>Simple physics inside a box—tweak the speeds and bounce to change the motion.</p>
-    </header>
-    <main>
-      <section class="panel">
-        <h2>Controls</h2>
-        <div class="controls">
-          <label>
-            Horizontal Speed
-            <input id="speedX" type="range" min="-400" max="400" step="10" value="150" />
-            <span id="speedXValue" class="value">150</span>
-          </label>
-          <label>
-            Vertical Speed
-            <input id="speedY" type="range" min="-400" max="400" step="10" value="-120" />
-            <span id="speedYValue" class="value">-120</span>
-          </label>
-          <label>
-            Bounce Factor
-            <input id="bounce" type="range" min="0.1" max="0.99" step="0.01" value="0.85" />
-            <span id="bounceValue" class="value">0.85</span>
-          </label>
-          <label>
-            Gravity
-            <input id="gravity" type="range" min="-50" max="400" step="10" value="250" />
-            <span id="gravityValue" class="value">250</span>
-          </label>
-        </div>
-        <p class="hint">Use negative vertical speed to toss the ball upward on start. Gravity pulls it back down.</p>
-      </section>
-      <section class="canvas-wrapper">
-        <canvas id="sceneCanvas"></canvas>
-        <div id="statusOverlay" class="status-overlay">
-          <div class="status-card">
-            <p id="statusText">Ready when you are.</p>
-            <button id="startButton" class="status-button" type="button">Start simulation</button>
-          </div>
-        </div>
-      </section>
-    </main>
-
+    <div class="frame">
+      <header>
+        <h1>Bouncing Ball Play Area</h1>
+      </header>
+      <canvas id="playArea" aria-label="Boxed bouncing ball"></canvas>
+    </div>
     <script type="module" src="src/main.js"></script>
   </body>
 </html>
