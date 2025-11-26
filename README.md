@@ -1,9 +1,10 @@
 # hallway project
 
-A minimal Three.js scene that lets you send a glowing ball bouncing down a neon hallway. Use the sliders to tweak gravity, forward speed, and bounce factor in real time.
+A lightweight HTML canvas demo that keeps a glowing ball bouncing inside a 2D box. Adjust the horizontal/vertical speeds, bounce factor, and gravity to change the motion.
 
 ## Run locally
+No build step is required—open `index.html` directly in a modern desktop browser. If you prefer, you can serve the folder with a simple static server, e.g. `python -m http.server 8000`, and visit `http://localhost:8000`.
 
-No build step is required, and the bundled copy of Three.js means you don't need network access. For the most reliable WebGL startup (especially with module loading restrictions in some browsers), serve the folder with a simple static server—for example, `python -m http.server 8000`—and visit `http://localhost:8000`. If you do open `index.html` directly, make sure your browser allows loading ES modules from local files and that the `vendor` folder sits next to `index.html`.
-
-When the page loads, wait for the overlay to say the scene is ready, then click **Start simulation**. If the canvas stays blank, try refreshing or serving the folder from a local server.
+## Usage
+1. Load the page and click **Start simulation**.
+2. Use the sliders to tune speed, gravity, and bounce. Negative vertical speed tosses the ball upward on start; positive gravity pulls it back down.

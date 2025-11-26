@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hallway Bounce</title>
+    <title>2D Bouncing Ball</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -12,7 +12,7 @@
       body {
         margin: 0;
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-        background: radial-gradient(circle, #1b1f3b 0%, #0f1118 60%, #0a0c12 100%);
+        background: radial-gradient(circle, #121424 0%, #0a0c14 60%, #06070c 100%);
         color: #f5f7fb;
         min-height: 100vh;
         display: grid;
@@ -62,6 +62,15 @@
         width: 100%;
       }
 
+      .controls .value {
+        display: inline-block;
+        min-width: 2.5ch;
+        text-align: right;
+        color: rgba(245, 247, 251, 0.8);
+        font-variant-numeric: tabular-nums;
+        margin-left: 0.25rem;
+      }
+
       .canvas-wrapper {
         width: 100%;
         height: 70vh;
@@ -69,8 +78,9 @@
         border-radius: 1rem;
         overflow: hidden;
         position: relative;
-        background: #06070d;
+        background: linear-gradient(135deg, #0c101f, #0c0d13 60%, #06070c 100%);
         box-shadow: 0 16px 60px rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
       }
 
       .status-overlay {
@@ -147,33 +157,41 @@
   </head>
   <body>
     <header>
-      <h1>Bouncing Ball Down the Hallway</h1>
-      <p>Adjust the gravity, speed, and bounce factor to see the effect in real-time.</p>
+      <h1>2D Bouncing Ball</h1>
+      <p>Simple physics inside a box—tweak the speeds and bounce to change the motion.</p>
     </header>
     <main>
       <section class="panel">
         <h2>Controls</h2>
         <div class="controls">
           <label>
-            Gravity
-            <input id="gravity" type="range" min="-25" max="-1" step="0.5" value="-9.8" />
+            Horizontal Speed
+            <input id="speedX" type="range" min="-400" max="400" step="10" value="150" />
+            <span id="speedXValue" class="value">150</span>
           </label>
           <label>
-            Forward Speed
-            <input id="speed" type="range" min="2" max="30" step="0.5" value="12" />
+            Vertical Speed
+            <input id="speedY" type="range" min="-400" max="400" step="10" value="-120" />
+            <span id="speedYValue" class="value">-120</span>
           </label>
           <label>
             Bounce Factor
-            <input id="bounce" type="range" min="0.2" max="0.95" step="0.01" value="0.78" />
+            <input id="bounce" type="range" min="0.1" max="0.99" step="0.01" value="0.85" />
+            <span id="bounceValue" class="value">0.85</span>
+          </label>
+          <label>
+            Gravity
+            <input id="gravity" type="range" min="-50" max="400" step="10" value="250" />
+            <span id="gravityValue" class="value">250</span>
           </label>
         </div>
-        <p class="hint">Tip: crank up the forward speed to send the ball flying down the corridor.</p>
+        <p class="hint">Use negative vertical speed to toss the ball upward on start. Gravity pulls it back down.</p>
       </section>
       <section class="canvas-wrapper">
         <canvas id="sceneCanvas"></canvas>
         <div id="statusOverlay" class="status-overlay">
           <div class="status-card">
-            <p id="statusText">Preparing hallway scene...</p>
+            <p id="statusText">Ready when you are.</p>
             <button id="startButton" class="status-button" type="button">Start simulation</button>
           </div>
         </div>

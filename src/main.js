@@ -3,174 +3,158 @@ const statusOverlay = document.getElementById('statusOverlay');
 const statusText = document.getElementById('statusText');
 const startButton = document.getElementById('startButton');
 
-async function loadThree() {
-  try {
-    return await import('../vendor/three.module.min.js');
-  } catch (error) {
-    console.error('Three.js failed to load from the bundled copy:', error);
-    statusText.textContent =
-      'Three.js could not load from the bundled copy. Please keep the files together and reload, or serve the folder with "python -m http.server 8000".';
-    startButton?.classList.add('hidden');
-    statusOverlay.classList.remove('hidden');
-    throw error;
+const speedXInput = document.getElementById('speedX');
+const speedYInput = document.getElementById('speedY');
+const bounceInput = document.getElementById('bounce');
+const gravityInput = document.getElementById('gravity');
+
+const speedXValue = document.getElementById('speedXValue');
+const speedYValue = document.getElementById('speedYValue');
+const bounceValue = document.getElementById('bounceValue');
+const gravityValue = document.getElementById('gravityValue');
+
+const ctx = canvas.getContext('2d');
+
+let width = 0;
+let height = 0;
+let running = false;
+let lastTimestamp = 0;
+
+const ball = {
+  x: 120,
+  y: 120,
+  radius: 18,
+  vx: 150,
+  vy: -120,
+  bounce: 0.85,
+  gravity: 250,
+};
+
+function resizeCanvas() {
+  const parent = canvas.parentElement;
+  if (!parent) return;
+  const nextWidth = parent.clientWidth;
+  const nextHeight = parent.clientHeight;
+
+  if (nextWidth !== width || nextHeight !== height) {
+    width = nextWidth;
+    height = nextHeight;
+    canvas.width = width;
+    canvas.height = height;
+    // Re-center the ball if it was outside the new bounds.
+    ball.x = Math.min(Math.max(ball.radius, ball.x), width - ball.radius);
+    ball.y = Math.min(Math.max(ball.radius, ball.y), height - ball.radius);
   }
 }
 
-(async () => {
-  let THREE;
-  try {
-    THREE = await loadThree();
-  } catch (error) {
-    return;
+function drawBox() {
+  const bgGradient = ctx.createLinearGradient(0, 0, width, height);
+  bgGradient.addColorStop(0, '#0f172a');
+  bgGradient.addColorStop(1, '#0b1021');
+  ctx.fillStyle = bgGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(6, 6, width - 12, height - 12);
+}
+
+function drawBall() {
+  const glow = ctx.createRadialGradient(ball.x, ball.y, ball.radius * 0.2, ball.x, ball.y, ball.radius * 1.4);
+  glow.addColorStop(0, 'rgba(110, 231, 255, 0.95)');
+  glow.addColorStop(1, 'rgba(79, 70, 229, 0)');
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.radius * 1.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  const fill = ctx.createRadialGradient(ball.x - ball.radius * 0.4, ball.y - ball.radius * 0.4, 6, ball.x, ball.y, ball.radius);
+  fill.addColorStop(0, '#e7ff6b');
+  fill.addColorStop(1, '#7f9728');
+  ctx.fillStyle = fill;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function updateValuesDisplay() {
+  speedXValue.textContent = Math.round(ball.vx);
+  speedYValue.textContent = Math.round(ball.vy);
+  bounceValue.textContent = ball.bounce.toFixed(2);
+  gravityValue.textContent = Math.round(ball.gravity);
+}
+
+function updateFromControls() {
+  ball.vx = parseFloat(speedXInput.value);
+  ball.vy = parseFloat(speedYInput.value);
+  ball.bounce = parseFloat(bounceInput.value);
+  ball.gravity = parseFloat(gravityInput.value);
+  updateValuesDisplay();
+}
+
+function step(timestamp) {
+  if (!running) return;
+
+  const delta = (timestamp - lastTimestamp) / 1000 || 0;
+  lastTimestamp = timestamp;
+
+  resizeCanvas();
+  drawBox();
+
+  // Apply physics.
+  ball.vy += ball.gravity * delta;
+  ball.x += ball.vx * delta;
+  ball.y += ball.vy * delta;
+
+  // Collisions.
+  const left = ball.radius;
+  const right = width - ball.radius;
+  const top = ball.radius;
+  const bottom = height - ball.radius;
+
+  if (ball.x < left) {
+    ball.x = left;
+    ball.vx = Math.abs(ball.vx) * ball.bounce;
+  } else if (ball.x > right) {
+    ball.x = right;
+    ball.vx = -Math.abs(ball.vx) * ball.bounce;
   }
 
-  try {
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-    const width = canvas.clientWidth || canvas.parentElement?.clientWidth || window.innerWidth;
-    const height = canvas.clientHeight || canvas.parentElement?.clientHeight || window.innerHeight * 0.7;
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(width, height, false);
-
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x05070d, 0.045);
-
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 100);
-    camera.position.set(0, 2, 6);
-
-    const hemisphere = new THREE.HemisphereLight(0xbdd4ff, 0x080808, 0.8);
-    scene.add(hemisphere);
-
-    const headlamp = new THREE.SpotLight(0xffffff, 1.3, 35, Math.PI / 7, 0.5, 1.5);
-    headlamp.position.set(0, 4, 4);
-    headlamp.target.position.set(0, 0.5, -10);
-    scene.add(headlamp, headlamp.target);
-
-    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.1, roughness: 0.6 });
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x121826, metalness: 0.05, roughness: 0.9 });
-
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(12, 80), floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    floor.position.z = -24;
-    scene.add(floor);
-
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.5, 6, 80), wallMaterial);
-    leftWall.position.set(-3, 2.5, -24);
-    const rightWall = leftWall.clone();
-    rightWall.position.x = 3;
-    const ceiling = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.5, 80), wallMaterial);
-    ceiling.position.set(0, 5.8, -24);
-    scene.add(leftWall, rightWall, ceiling);
-
-    const glowMaterial = new THREE.MeshBasicMaterial({ color: 0x44ccff, transparent: true, opacity: 0.12 });
-    const glowLines = new THREE.Mesh(new THREE.BoxGeometry(6.2, 0.02, 80), glowMaterial);
-    glowLines.position.set(0, 0.02, -24);
-    scene.add(glowLines);
-
-    const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(0.6, 36, 24),
-      new THREE.MeshStandardMaterial({ color: 0xe7ff6b, emissive: 0x455522, roughness: 0.2 })
-    );
-    ball.castShadow = true;
-    ball.receiveShadow = true;
-    ball.position.set(0, 2, 6);
-    scene.add(ball);
-
-    const floorHeight = 0.6;
-    const corridorDepth = 60;
-    const clock = new THREE.Clock();
-    const velocity = new THREE.Vector3(0, 0, -12);
-    let gravity = -9.8;
-    let bounceFactor = 0.78;
-
-    const gravityInput = document.getElementById('gravity');
-    const speedInput = document.getElementById('speed');
-    const bounceInput = document.getElementById('bounce');
-
-    let started = false;
-
-    function resizeRenderer() {
-      const nextWidth = canvas.clientWidth || canvas.parentElement?.clientWidth || window.innerWidth;
-      const nextHeight = canvas.clientHeight || canvas.parentElement?.clientHeight || window.innerHeight * 0.7;
-      const needsResize = canvas.width !== nextWidth || canvas.height !== nextHeight;
-      if (needsResize) {
-        renderer.setSize(nextWidth, nextHeight, false);
-        camera.aspect = nextWidth / nextHeight;
-        camera.updateProjectionMatrix();
-      }
-    }
-
-    function resetBall() {
-      ball.position.set(0, 2, 6);
-      velocity.set(0, 0, -parseFloat(speedInput.value));
-    }
-
-    function updateControls() {
-      gravity = parseFloat(gravityInput.value);
-      bounceFactor = parseFloat(bounceInput.value);
-      velocity.z = -parseFloat(speedInput.value);
-    }
-
-    function animate() {
-      resizeRenderer();
-      const delta = clock.getDelta();
-
-      velocity.y += gravity * delta;
-      ball.position.addScaledVector(velocity, delta);
-
-      if (ball.position.y <= floorHeight) {
-        ball.position.y = floorHeight;
-        velocity.y = -velocity.y * bounceFactor;
-      }
-
-      if (ball.position.z <= -corridorDepth) {
-        ball.position.z = 6;
-      }
-
-      camera.position.z = ball.position.z + 5;
-      headlamp.position.z = ball.position.z + 2;
-      headlamp.target.position.z = ball.position.z - 4;
-
-      renderer.render(scene, camera);
-      requestAnimationFrame(animate);
-    }
-
-    function initializeUI() {
-      updateControls();
-
-      gravityInput.addEventListener('input', updateControls);
-      speedInput.addEventListener('input', () => {
-        velocity.z = -parseFloat(speedInput.value);
-      });
-      bounceInput.addEventListener('input', () => {
-        bounceFactor = parseFloat(bounceInput.value);
-      });
-    }
-
-    function startSimulation() {
-      if (started) return;
-      started = true;
-      statusOverlay.classList.add('hidden');
-      resetBall();
-      clock.start();
-      animate();
-    }
-
-    statusText.textContent =
-      'Click Start to launch the hallway bounce. If you see a blank canvas, your browser may be blocking WebGL or local file access—serving with "python -m http.server 8000" often fixes it.';
-    startButton?.classList.remove('hidden');
-    startButton?.addEventListener('click', startSimulation);
-
-    initializeUI();
-
-    // Auto-start after a short delay in case the user expects instant playback.
-    setTimeout(startSimulation, 400);
-
-    window.addEventListener('resize', resizeRenderer);
-  } catch (error) {
-    console.error('Failed to start the scene:', error);
-    statusText.textContent =
-      'The hallway scene could not start. If you opened this file directly, try running it from a local server instead (for example, "python -m http.server 8000").';
-    startButton?.classList.add('hidden');
-    statusOverlay.classList.remove('hidden');
+  if (ball.y < top) {
+    ball.y = top;
+    ball.vy = Math.abs(ball.vy) * ball.bounce;
+  } else if (ball.y > bottom) {
+    ball.y = bottom;
+    ball.vy = -Math.abs(ball.vy) * ball.bounce;
   }
-})();
+
+  drawBall();
+  requestAnimationFrame(step);
+}
+
+function start() {
+  if (running) return;
+  running = true;
+  lastTimestamp = performance.now();
+  statusOverlay.classList.add('hidden');
+  resizeCanvas();
+  requestAnimationFrame(step);
+}
+
+function init() {
+  updateFromControls();
+  speedXInput.addEventListener('input', updateFromControls);
+  speedYInput.addEventListener('input', updateFromControls);
+  bounceInput.addEventListener('input', updateFromControls);
+  gravityInput.addEventListener('input', updateFromControls);
+
+  startButton?.addEventListener('click', start);
+  statusText.textContent = 'Press start to see the ball bounce inside the box.';
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+  drawBox();
+  drawBall();
+}
+
+init();
