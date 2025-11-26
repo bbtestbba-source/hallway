@@ -3,11 +3,27 @@ const statusOverlay = document.getElementById('statusOverlay');
 const statusText = document.getElementById('statusText');
 const startButton = document.getElementById('startButton');
 
-if (!window.THREE) {
-  statusText.textContent = 'Three.js failed to load. Please check your connection and reload the page.';
-  startButton?.classList.add('hidden');
-  statusOverlay.classList.remove('hidden');
-} else {
+async function loadThree() {
+  try {
+    return await import('../vendor/three.module.min.js');
+  } catch (error) {
+    console.error('Three.js failed to load from the bundled copy:', error);
+    statusText.textContent =
+      'Three.js could not load from the bundled copy. Please keep the files together and reload, or serve the folder with "python -m http.server 8000".';
+    startButton?.classList.add('hidden');
+    statusOverlay.classList.remove('hidden');
+    throw error;
+  }
+}
+
+(async () => {
+  let THREE;
+  try {
+    THREE = await loadThree();
+  } catch (error) {
+    return;
+  }
+
   try {
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     const width = canvas.clientWidth || canvas.parentElement?.clientWidth || window.innerWidth;
@@ -157,4 +173,4 @@ if (!window.THREE) {
     startButton?.classList.add('hidden');
     statusOverlay.classList.remove('hidden');
   }
-}
+})();
