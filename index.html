@@ -94,27 +94,29 @@
       let paused = false;
 
       const camera = {
-        z: -14,
-        focal: 320,
-        horizon: 0.58,
+        z: 0,
+        focal: 360,
+        horizon: 0.6,
+        followDistance: 10,
       };
 
       const corridor = {
         halfWidth: 6,
         height: 6,
-        length: 80,
+        segmentLength: 60,
+        stripeGap: 8,
       };
 
       const ball = {
         x: 0,
-        y: 1,
-        z: 6,
-        radius: 0.35,
-        vx: 2.4,
-        vy: 3.8,
-        vz: 12,
-        gravity: 14,
-        bounce: 0.82,
+        y: 1.8,
+        z: 14,
+        radius: 0.38,
+        vx: 2.6,
+        vy: 4.6,
+        vz: 16,
+        gravity: 15,
+        bounce: 0.84,
       };
 
       function resizeCanvas() {
@@ -144,8 +146,8 @@
       }
 
       function drawCorridor() {
-        const nearZ = 0.1;
-        const farZ = corridor.length;
+        const nearZ = camera.z + 0.2;
+        const farZ = nearZ + corridor.segmentLength;
         const floorY = 0;
         const ceilingY = corridor.height;
 
@@ -243,9 +245,11 @@
         // Light streaks along the hallway
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
         ctx.lineWidth = 1;
-        for (let i = 4; i < corridor.length; i += 8) {
-          const a = project(-corridor.halfWidth, floorY, i);
-          const b = project(corridor.halfWidth, floorY, i);
+        const firstStripe = Math.floor(nearZ / corridor.stripeGap) * corridor.stripeGap;
+        for (let z = firstStripe; z < farZ; z += corridor.stripeGap) {
+          if (z <= camera.z) continue;
+          const a = project(-corridor.halfWidth, floorY, z);
+          const b = project(corridor.halfWidth, floorY, z);
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
@@ -301,10 +305,7 @@
           ball.vy = -Math.abs(ball.vy) * ball.bounce;
         }
 
-        // Loop hallway
-        if (ball.z > corridor.length) {
-          ball.z -= corridor.length;
-        }
+        camera.z = ball.z - camera.followDistance;
       }
 
       function drawBackground() {
@@ -320,6 +321,8 @@
         lastTime = timestamp;
 
         resizeCanvas();
+        camera.z = ball.z - camera.followDistance;
+
         drawBackground();
         drawCorridor();
 
@@ -334,6 +337,7 @@
       function init() {
         resizeCanvas();
         lastTime = performance.now();
+        camera.z = ball.z - camera.followDistance;
         window.addEventListener('resize', resizeCanvas);
         canvas.addEventListener('dblclick', () => {
           paused = !paused;

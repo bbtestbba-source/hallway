@@ -17,5 +17,5 @@ The page bundles all logic inline, so it works without a network connection. Usi
 ## How it works
 
 - A 2D canvas renders a perspective hallway and a glowing ball projected with a simple focal-length transform.
-- Physics apply gravity, wall bounces, and a forward push along the hallway; reaching the end wraps the ball back to the start for continuous motion.
+- Physics apply gravity, wall bounces, and a forward push while the camera follows from behind, giving a chase view down the tunnel.
 - Resize events keep the scene full-bleed inside the framed container.
