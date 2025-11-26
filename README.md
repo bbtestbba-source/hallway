@@ -4,4 +4,4 @@ A minimal Three.js scene that lets you send a glowing ball bouncing down a neon 
 
 ## Run locally
 
-No build step is required. Open `index.html` directly in a modern browser or serve the folder with a simple static server (for example, `python -m http.server 8000`) and visit `http://localhost:8000`.
+No build step is required. For the most reliable WebGL startup (especially with module loading restrictions in some browsers), serve the folder with a simple static server—for example, `python -m http.server 8000`—and visit `http://localhost:8000`. If you do open `index.html` directly, make sure your browser allows loading external modules from local files.
