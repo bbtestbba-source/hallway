@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Draft Inspector</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="popup-header">
+      <div>
+        <p class="eyebrow">Sora Draft Inspector</p>
+        <h1>Drafts in view</h1>
+      </div>
+      <button id="refreshButton" class="button button-secondary">
+        Refresh
+      </button>
+    </header>
+    <section class="summary">
+      <div>
+        <p class="summary-label">Saved drafts</p>
+        <p class="summary-value" id="draftCount">0</p>
+      </div>
+      <div>
+        <p class="summary-label">Last updated</p>
+        <p class="summary-value" id="lastUpdated">--</p>
+      </div>
+    </section>
+    <main>
+      <ul id="draftList" class="draft-list"></ul>
+      <p id="emptyState" class="empty-state">
+        Scroll the drafts page to collect thumbnails. We'll remember them
+        here.
+      </p>
+    </main>
+    <footer class="popup-footer">
+      <button id="clearButton" class="button button-danger">
+        Clear saved drafts
+      </button>
+    </footer>
+    <script src="popup.js"></script>
+  </body>
+</html>

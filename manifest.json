@@ -1,0 +1,22 @@
+{
+  "manifest_version": 3,
+  "name": "Sora Draft Inspector",
+  "version": "0.1.0",
+  "description": "Collects Sora draft thumbnails as you scroll and lets you browse them in a popup.",
+  "action": {
+    "default_title": "Draft Inspector",
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://sora.chatgpt.com/*", "https://sora.com/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": ["https://sora.chatgpt.com/*", "https://sora.com/*"]
+}

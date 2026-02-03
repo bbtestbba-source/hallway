@@ -1,21 +1,27 @@
-# Hallway Bouncing Ball
+# Sora Draft Inspector Extension
 
-A single-file HTML that draws a glowing ball racing down a stylized hallway on a 2D canvas. Open the file directly or serve it—no external assets or builds required.
+This project is now a lightweight Chrome extension that collects draft thumbnails
+from the Sora drafts page as you scroll and surfaces them in a popup called the
+**Draft Inspector**. The popup remembers previously seen drafts, so you can jump
+back without scrolling all the way down again.
 
-## How to run
+## What it does
 
-1. Locate `index.html` in this folder.
-2. Either double-click it (opens via `file://`) **or** start a tiny local server and browse to it:
-   ```sh
-   python -m http.server 8000
-   # then visit http://localhost:8000
-   ```
-3. Watch the ball bounce its way down the corridor. Double-click the canvas to pause/resume.
+- Watches the drafts page for cards with thumbnails and caches them locally.
+- Shows saved thumbnails, titles, and the last-seen timestamp in the popup.
+- Lets you refresh the cache or clear it entirely.
 
-The page bundles all logic inline, so it works without a network connection. Using a local server is optional; it simply mimics typical hosting if you prefer.
+## Install locally (Chrome)
 
-## How it works
+1. Open Chrome and go to `chrome://extensions`.
+2. Turn on **Developer mode** (top-right toggle).
+3. Click **Load unpacked** and select this project folder.
+4. Visit `https://sora.chatgpt.com/drafts` (or your drafts URL) and scroll.
+5. Click the extension icon to open **Draft Inspector** and review saved drafts.
 
-- A 2D canvas renders a perspective hallway and a glowing ball projected with a simple focal-length transform.
-- Physics apply gravity, wall bounces, and a forward push while the camera follows from behind, giving a chase view down the tunnel.
-- Resize events keep the scene full-bleed inside the framed container.
+## Notes
+
+- The extension stores thumbnails in `chrome.storage.local`.
+- The selectors in `content-script.js` are intentionally broad to work with
+  multiple draft card layouts. If nothing is captured, open the console to
+  inspect the draft card markup and refine the selectors.
