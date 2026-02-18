@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Distance Between God</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-a: #070a16;
+        --bg-b: #110620;
+        --text: #eef2ff;
+        --muted: #b3b8d9;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color: var(--text);
+        background: radial-gradient(circle at 50% 30%, #1a1838 0%, var(--bg-b) 45%, var(--bg-a) 100%);
+        overflow: hidden;
+      }
+
+      .hud {
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        z-index: 10;
+        width: min(460px, calc(100vw - 32px));
+        backdrop-filter: blur(10px);
+        background: linear-gradient(160deg, rgba(22, 28, 55, 0.72), rgba(16, 12, 32, 0.68));
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 16px;
+        padding: 14px 16px;
+        box-shadow: 0 14px 40px rgba(2, 3, 8, 0.5);
+      }
+
+      .hud h1 {
+        margin: 0 0 6px;
+        font-size: 18px;
+        letter-spacing: 0.02em;
+      }
+
+      .hud p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .metrics {
+        margin-top: 12px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .metric {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 8px;
+      }
+
+      .metric-label {
+        display: block;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .metric-value {
+        display: block;
+        margin-top: 2px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+
+      .canvas-wrap {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .hint {
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 10;
+        font-size: 12px;
+        color: var(--muted);
+        background: rgba(9, 11, 20, 0.58);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        padding: 8px 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hud">
+      <h1>The Distance Between God</h1>
+      <p>
+        Drag the <strong>Self</strong> orb. As it moves away from the <strong>Sun</strong>, both lights dim.
+        Bringing them closer restores shared brightness.
+      </p>
+      <div class="metrics">
+        <div class="metric">
+          <span class="metric-label">Distance</span>
+          <span id="distance" class="metric-value">0</span>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Shared Light</span>
+          <span id="sharedLight" class="metric-value">100%</span>
+        </div>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="scene"></canvas>
+    </div>
+    <div class="hint">Click + drag the Self orb</div>
+
+    <script>
+      const canvas = document.getElementById("scene");
+      const ctx = canvas.getContext("2d");
+      const distanceEl = document.getElementById("distance");
+      const sharedLightEl = document.getElementById("sharedLight");
+
+      const state = {
+        width: 0,
+        height: 0,
+        time: 0,
+        dragging: false,
+        sun: { x: 0, y: 0, r: 56 },
+        self: { x: 0, y: 0, r: 34, vx: 0, vy: 0 }
+      };
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const lerp = (a, b, t) => a + (b - a) * t;
+
+      function resize() {
+        state.width = window.innerWidth;
+        state.height = window.innerHeight;
+        canvas.width = Math.floor(state.width * devicePixelRatio);
+        canvas.height = Math.floor(state.height * devicePixelRatio);
+        ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+
+        state.sun.x = state.width * 0.34;
+        state.sun.y = state.height * 0.52;
+
+        if (!state.self.x && !state.self.y) {
+          state.self.x = state.width * 0.62;
+          state.self.y = state.height * 0.5;
+        } else {
+          state.self.x = clamp(state.self.x, 24, state.width - 24);
+          state.self.y = clamp(state.self.y, 24, state.height - 24);
+        }
+      }
+
+      function pointerPos(event) {
+        const rect = canvas.getBoundingClientRect();
+        return {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        };
+      }
+
+      function isInsideSelf(x, y) {
+        const dx = x - state.self.x;
+        const dy = y - state.self.y;
+        return Math.hypot(dx, dy) <= state.self.r + 18;
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        const p = pointerPos(event);
+        if (isInsideSelf(p.x, p.y)) {
+          state.dragging = true;
+          canvas.setPointerCapture(event.pointerId);
+        }
+      });
+
+      canvas.addEventListener("pointermove", (event) => {
+        if (!state.dragging) {
+          return;
+        }
+        const p = pointerPos(event);
+        state.self.x = clamp(p.x, 28, state.width - 28);
+        state.self.y = clamp(p.y, 28, state.height - 28);
+        state.self.vx = 0;
+        state.self.vy = 0;
+      });
+
+      function endDrag(event) {
+        if (state.dragging) {
+          state.dragging = false;
+          canvas.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      canvas.addEventListener("pointerup", endDrag);
+      canvas.addEventListener("pointercancel", endDrag);
+      canvas.addEventListener("pointerleave", () => {
+        state.dragging = false;
+      });
+
+      function drawGlow(x, y, radius, color, intensity, spread = 2.8) {
+        const glow = ctx.createRadialGradient(x, y, radius * 0.2, x, y, radius * spread);
+        glow.addColorStop(0, `rgba(${color}, ${0.84 * intensity})`);
+        glow.addColorStop(0.35, `rgba(${color}, ${0.34 * intensity})`);
+        glow.addColorStop(1, `rgba(${color}, 0)`);
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, radius * spread, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      function drawOrb(x, y, radius, baseColor, highlightColor, intensity, label) {
+        drawGlow(x, y, radius, baseColor, intensity);
+
+        const orb = ctx.createRadialGradient(
+          x - radius * 0.3,
+          y - radius * 0.35,
+          radius * 0.2,
+          x,
+          y,
+          radius
+        );
+        orb.addColorStop(0, `rgba(${highlightColor}, ${0.95 * intensity + 0.04})`);
+        orb.addColorStop(0.55, `rgba(${baseColor}, ${0.94 * intensity + 0.06})`);
+        orb.addColorStop(1, `rgba(10, 10, 18, ${0.95 - intensity * 0.3})`);
+
+        ctx.fillStyle = orb;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = `rgba(255,255,255,${0.22 + intensity * 0.42})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = `rgba(238, 242, 255, ${0.58 + intensity * 0.42})`;
+        ctx.font = "600 14px Inter, system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(label, x, y + radius + 22);
+      }
+
+      function animate() {
+        state.time += 0.016;
+
+        const dx = state.self.x - state.sun.x;
+        const dy = state.self.y - state.sun.y;
+        const distance = Math.hypot(dx, dy);
+        const maxDistance = Math.hypot(state.width, state.height) * 0.72;
+        const closeness = clamp(1 - distance / maxDistance, 0, 1);
+        const sharedLight = Math.pow(closeness, 0.8);
+
+        if (!state.dragging) {
+          state.self.vx += Math.sin(state.time * 0.82) * 0.01;
+          state.self.vy += Math.cos(state.time * 0.97) * 0.01;
+          state.self.vx *= 0.985;
+          state.self.vy *= 0.985;
+          state.self.x += state.self.vx;
+          state.self.y += state.self.vy;
+
+          const r = state.self.r;
+          if (state.self.x < r || state.self.x > state.width - r) state.self.vx *= -1;
+          if (state.self.y < r || state.self.y > state.height - r) state.self.vy *= -1;
+          state.self.x = clamp(state.self.x, r, state.width - r);
+          state.self.y = clamp(state.self.y, r, state.height - r);
+        }
+
+        const bgGlow = ctx.createRadialGradient(
+          state.sun.x,
+          state.sun.y,
+          30,
+          state.sun.x,
+          state.sun.y,
+          Math.max(state.width, state.height)
+        );
+        bgGlow.addColorStop(0, `rgba(255, 196, 84, ${0.15 + sharedLight * 0.22})`);
+        bgGlow.addColorStop(0.45, `rgba(107, 56, 209, ${0.08 + sharedLight * 0.18})`);
+        bgGlow.addColorStop(1, "rgba(6, 7, 16, 1)");
+        ctx.fillStyle = bgGlow;
+        ctx.fillRect(0, 0, state.width, state.height);
+
+        const rays = 18;
+        ctx.save();
+        ctx.translate(state.sun.x, state.sun.y);
+        for (let i = 0; i < rays; i += 1) {
+          const a = (i / rays) * Math.PI * 2 + state.time * 0.06;
+          const rayLen = lerp(110, 290, sharedLight) + Math.sin(state.time * 1.8 + i) * 8;
+          ctx.strokeStyle = `rgba(255, 194, 90, ${0.035 + sharedLight * 0.08})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(a) * (state.sun.r * 0.9), Math.sin(a) * (state.sun.r * 0.9));
+          ctx.lineTo(Math.cos(a) * rayLen, Math.sin(a) * rayLen);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.moveTo(state.sun.x, state.sun.y);
+        ctx.lineTo(state.self.x, state.self.y);
+        ctx.strokeStyle = `rgba(174, 203, 255, ${0.08 + sharedLight * 0.34})`;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        drawOrb(
+          state.sun.x,
+          state.sun.y,
+          state.sun.r,
+          "255, 177, 48",
+          "255, 245, 192",
+          0.25 + sharedLight * 0.75,
+          "Sun"
+        );
+        drawOrb(
+          state.self.x,
+          state.self.y,
+          state.self.r,
+          "120, 158, 255",
+          "221, 233, 255",
+          0.24 + sharedLight * 0.76,
+          "Self"
+        );
+
+        distanceEl.textContent = `${Math.round(distance)} px`;
+        sharedLightEl.textContent = `${Math.round(sharedLight * 100)}%`;
+
+        requestAnimationFrame(animate);
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+      requestAnimationFrame(animate);
+    </script>
+  </body>
+</html>
