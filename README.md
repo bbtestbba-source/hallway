@@ -1,29 +1,20 @@
-# Sora Draft Inspector Extension
+# The Distance Between God
 
-This project is now a lightweight Chrome extension that collects draft thumbnails
-from the Sora drafts page as you scroll and surfaces them in a floating **Draft
-Inspector** panel plus the extension popup. The inspector remembers previously
-seen drafts, so you can jump back without scrolling all the way down again.
+A single-file HTML simulation exploring distance and shared light between two objects:
 
-## What it does
+- **Sun** (center anchor)
+- **Self** (movable orb)
 
-- Watches the drafts page for cards with thumbnails and caches them locally.
-- Shows saved thumbnails, titles, and the last-seen timestamp in the popup and
-  on-page inspector.
-- Lets you refresh the cache or clear it entirely.
+As the **Self** moves farther from the **Sun**, both objects dim. As they move closer, both brighten with stronger glow.
 
-## Install locally (Chrome)
+## Run
 
-1. Open Chrome and go to `chrome://extensions`.
-2. Turn on **Developer mode** (top-right toggle).
-3. Click **Load unpacked** and select this project folder.
-4. Visit `https://sora.chatgpt.com/drafts` (or your drafts URL) and scroll.
-5. Click the floating **Drafts** button on the page (bottom-right) to open the
-   inspector panel, or click the extension icon to open the popup.
+1. Open `index.html` directly in a browser.
+2. Click and drag the **Self** orb.
+3. Watch the distance and shared-light metrics update in real time.
 
-## Notes
+No build step and no server are required.
 
-- The extension stores thumbnails in `chrome.storage.local`.
-- The selectors in `content-script.js` are intentionally broad to work with
-  multiple draft card layouts. If nothing is captured, open the console to
-  inspect the draft card markup and refine the selectors.
+## Project reset note
+
+This project was reset to focus on the new simulation. Legacy extension files are retained in the repository as placeholders due environment file-removal policy, but they are not used by this simulation.
