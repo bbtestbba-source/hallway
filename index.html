@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sacred Geometry Ripple Lab</title>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #0b1220; color: #fff; }
+    #ui { position: fixed; right: 10px; top: 10px; width: 260px; background: rgba(0,0,0,.55); padding: 10px; border-radius: 10px; z-index: 2; }
+    select, button { width: 100%; margin: 6px 0; padding: 6px; border-radius: 8px; border: 0; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <strong>Geometry</strong>
+    <select id="mode">
+      <option>Seed of Life (7)</option>
+      <option>Egg of Life (8)</option>
+      <option>Fruit of Life (13)</option>
+      <option>Flower of Life (19)</option>
+    </select>
+    <button id="emit">Emit All</button>
+    <small>Defaults are corrected so circles overlap using center spacing = radius.</small>
+  </div>
+<script>
+let circles = [];
+let ripples = [];
+const R = 42; // circle radius
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  rebuild();
+  document.getElementById('mode').addEventListener('change', rebuild);
+  document.getElementById('emit').addEventListener('click', () => circles.forEach(spawnRipple));
+}
+
+function draw() {
+  background(11,18,32);
+  drawLinks();
+  updateRipples();
+  drawCircles();
+  drawRipples();
+}
+
+function rebuild() {
+  circles = [];
+  ripples = [];
+  const cx = width/2, cy = height/2;
+  const mode = document.getElementById('mode').value;
+
+  // Correct overlap rule: center spacing = R (not 2R)
+  const step = R;
+
+  if (mode.startsWith('Seed')) {
+    circles = ringLayout(cx, cy, step, [0,6]); // 1 + 6 = 7
+  } else if (mode.startsWith('Egg')) {
+    circles = ringLayout(cx, cy, step, [0,6]);
+    const a = -Math.PI/2; // add top child for 8th
+    circles.push({x: cx + Math.cos(a)*step*2, y: cy + Math.sin(a)*step*2, r:R, core:0});
+  } else if (mode.startsWith('Fruit')) {
+    circles = ringLayout(cx, cy, step, [0,6,6]); // 1 + 6 + 6 = 13
+  } else {
+    circles = ringLayout(cx, cy, step, [0,6,12]); // 1 + 6 + 12 = 19
+  }
+}
+
+function ringLayout(cx, cy, step, spec) {
+  const out = [{x:cx,y:cy,r:R,core:0}];
+  if (spec[1]) {
+    for (let i=0;i<6;i++) {
+      const a = -Math.PI/2 + i*Math.PI/3;
+      out.push({x:cx+Math.cos(a)*step,y:cy+Math.sin(a)*step,r:R,core:0});
+    }
+  }
+  if (spec[2]===6) {
+    for (let i=0;i<6;i++) {
+      const a = i*Math.PI/3;
+      out.push({x:cx+Math.cos(a)*step*2,y:cy+Math.sin(a)*step*2,r:R,core:0});
+    }
+  } else if (spec[2]===12) {
+    for (let i=0;i<12;i++) {
+      const a = -Math.PI/2 + i*(Math.PI/6);
+      out.push({x:cx+Math.cos(a)*step*2,y:cy+Math.sin(a)*step*2,r:R,core:0});
+    }
+  }
+  return dedupe(out, 6);
+}
+
+function dedupe(arr, eps) {
+  const out=[];
+  for (const c of arr) {
+    if (!out.some(o=>dist(o.x,o.y,c.x,c.y)<eps)) out.push(c);
+  }
+  return out;
+}
+
+function spawnRipple(c) {
+  ripples.push({owner:c,pos:c.r,dir:-1,amp:1,bounces:0,max:6}); // start outer ring -> inward
+}
+
+function mousePressed() {
+  for (const c of circles) if (dist(mouseX,mouseY,c.x,c.y)<=c.r) spawnRipple(c);
+}
+
+function updateRipples() {
+  for (let i=ripples.length-1;i>=0;i--) {
+    const rp=ripples[i], c=rp.owner;
+    rp.pos += rp.dir*2.5;
+    rp.amp *= 0.985;
+    if (rp.pos<=0) { rp.pos=0; rp.dir=1; rp.bounces++; c.core+=1; }
+    if (rp.pos>=c.r) { rp.pos=c.r; rp.dir=-1; rp.bounces++; }
+    if (rp.amp<0.03 || rp.bounces>rp.max) ripples.splice(i,1);
+  }
+  circles.forEach(c=>c.core*=0.9);
+}
+
+function drawCircles() {
+  noFill(); stroke(120,150,240,200); strokeWeight(2);
+  circles.forEach(c=>circle(c.x,c.y,c.r*2));
+  noStroke();
+  circles.forEach(c=>{ fill(100,255,220,180); circle(c.x,c.y,8+c.core*12); });
+}
+
+function drawRipples() {
+  noFill();
+  for (const rp of ripples) {
+    stroke(120,220,255,220*rp.amp); strokeWeight(2);
+    circle(rp.owner.x,rp.owner.y,rp.pos*2);
+  }
+}
+
+function drawLinks() {
+  stroke(70,100,170,70); strokeWeight(1);
+  for (let i=0;i<circles.length;i++) for (let j=i+1;j<circles.length;j++) {
+    if (dist(circles[i].x,circles[i].y,circles[j].x,circles[j].y)<=R*1.05) {
+      line(circles[i].x,circles[i].y,circles[j].x,circles[j].y);
+    }
+  }
+}
+
+function windowResized(){resizeCanvas(windowWidth,windowHeight); rebuild();}
+</script>
+</body>
+</html>
